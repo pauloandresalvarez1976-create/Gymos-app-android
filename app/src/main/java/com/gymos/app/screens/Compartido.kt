@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-const val ANTHROPIC_API_KEY: String = "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"
+const val ANTHROPIC_API_KEY: String = "TU_API_KEY_AQUI"
 
 @Composable
 fun SelectorSeccion(
