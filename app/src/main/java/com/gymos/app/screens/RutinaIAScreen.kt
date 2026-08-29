@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -27,41 +26,22 @@ import java.net.URL
 suspend fun generarRutina(objetivo: String, nivel: String, dias: Int): String {
     return withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.anthropic.com/v1/messages")
+            val url = URL("$API_BASE_URL/api/rutina")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("x-api-key", ANTHROPIC_API_KEY)
-            connection.setRequestProperty("anthropic-version", "2023-06-01")
             connection.doOutput = true
 
-            val prompt = """
-                Creá una rutina de ejercicios personalizada para alguien con las siguientes características:
-                - Objetivo: $objetivo
-                - Nivel: $nivel
-                - Días disponibles por semana: $dias
-                
-                Respondé SOLO con la rutina, sin introducción ni conclusión.
-                Organizala por día (Día 1, Día 2, etc.).
-                Para cada ejercicio incluí: nombre, series x repeticiones y descanso.
-                Usá formato claro y fácil de leer.
-            """.trimIndent()
-
             val body = JSONObject().apply {
-                put("model", "claude-sonnet-4-6")
-                put("max_tokens", 1024)
-                put("messages", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("role", "user")
-                        put("content", prompt)
-                    })
-                })
+                put("objetivo", objetivo)
+                put("nivel", nivel)
+                put("dias", dias)
             }
 
             connection.outputStream.write(body.toString().toByteArray())
             val response = connection.inputStream.bufferedReader().readText()
             val json = JSONObject(response)
-            json.getJSONArray("content").getJSONObject(0).getString("text")
+            json.getString("resultado")
         } catch (e: Exception) {
             "Error al generar la rutina. Verificá tu conexión e intentá de nuevo."
         }

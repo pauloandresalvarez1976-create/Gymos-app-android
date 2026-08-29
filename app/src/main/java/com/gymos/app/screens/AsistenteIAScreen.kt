@@ -32,37 +32,29 @@ data class Mensaje(val texto: String, val esUsuario: Boolean)
 suspend fun enviarMensaje(historial: List<Mensaje>, nuevoMensaje: String): String {
     return withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.anthropic.com/v1/messages")
+            val url = URL("$API_BASE_URL/api/asistente")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("x-api-key", ANTHROPIC_API_KEY)
-            connection.setRequestProperty("anthropic-version", "2023-06-01")
             connection.doOutput = true
 
-            val mensajes = JSONArray()
+            val mensajesJson = JSONArray()
             historial.forEach { msg ->
-                mensajes.put(JSONObject().apply {
+                mensajesJson.put(JSONObject().apply {
                     put("role", if (msg.esUsuario) "user" else "assistant")
                     put("content", msg.texto)
                 })
             }
-            mensajes.put(JSONObject().apply {
-                put("role", "user")
-                put("content", nuevoMensaje)
-            })
 
             val body = JSONObject().apply {
-                put("model", "claude-sonnet-4-6")
-                put("max_tokens", 1024)
-                put("system", "Sos un asistente experto en fitness, nutrición y entrenamiento. Respondé siempre en español, de forma clara y motivadora. Ayudá al usuario con sus dudas sobre ejercicios, dietas, rutinas y salud en general.")
-                put("messages", mensajes)
+                put("historial", mensajesJson)
+                put("mensaje", nuevoMensaje)
             }
 
             connection.outputStream.write(body.toString().toByteArray())
             val response = connection.inputStream.bufferedReader().readText()
             val json = JSONObject(response)
-            json.getJSONArray("content").getJSONObject(0).getString("text")
+            json.getString("resultado")
         } catch (e: Exception) {
             "Error al conectar con el asistente. Verificá tu conexión."
         }
@@ -115,7 +107,6 @@ fun AsistenteIAScreen() {
             .fillMaxSize()
             .background(Color(0xFF0D0D0D))
     ) {
-        // HEADER
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,7 +133,6 @@ fun AsistenteIAScreen() {
             }
         }
 
-        // MENSAJES
         if (historialState.isEmpty()) {
             Box(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -209,7 +199,6 @@ fun AsistenteIAScreen() {
             }
         }
 
-        // INPUT
         Row(
             modifier = Modifier
                 .fillMaxWidth()

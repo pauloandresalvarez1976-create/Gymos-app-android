@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -27,32 +26,22 @@ import java.net.URL
 suspend fun llamarAPIDieta(objetivo: String, actividad: String, restricciones: String): String {
     return withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.anthropic.com/v1/messages")
+            val url = URL("$API_BASE_URL/api/dieta")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("x-api-key", ANTHROPIC_API_KEY)
-            connection.setRequestProperty("anthropic-version", "2023-06-01")
             connection.doOutput = true
 
-            val restriccionesTexto = if (restricciones.isNotEmpty()) "Restricciones: $restricciones" else "Sin restricciones"
-            val prompt = "Creá un plan de alimentación diario para objetivo: $objetivo, actividad: $actividad. $restriccionesTexto. Organizalo por comidas (Desayuno, Media mañana, Almuerzo, Merienda, Cena) con cantidades y calorías. Al final el total calórico."
-
             val body = JSONObject().apply {
-                put("model", "claude-sonnet-4-6")
-                put("max_tokens", 1024)
-                put("messages", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("role", "user")
-                        put("content", prompt)
-                    })
-                })
+                put("objetivo", objetivo)
+                put("actividad", actividad)
+                put("restricciones", restricciones)
             }
 
             connection.outputStream.write(body.toString().toByteArray())
             val response = connection.inputStream.bufferedReader().readText()
             val json = JSONObject(response)
-            json.getJSONArray("content").getJSONObject(0).getString("text")
+            json.getString("resultado")
         } catch (e: Exception) {
             "Error: ${e.message}"
         }
@@ -87,7 +76,6 @@ fun DietaIAScreen() {
             modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
         )
 
-        // OBJETIVO
         SelectorSeccion(
             titulo = "Objetivo",
             opciones = objetivos,
@@ -98,7 +86,6 @@ fun DietaIAScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ACTIVIDAD
         SelectorSeccion(
             titulo = "Nivel de actividad",
             opciones = actividades,
@@ -109,7 +96,6 @@ fun DietaIAScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // RESTRICCIONES
         Box(
             modifier = Modifier
                 .fillMaxWidth()

@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-const val ANTHROPIC_API_KEY: String = "TU_API_KEY_AQUI"
+const val API_BASE_URL = "https://gymos-api-ld4c.onrender.com"
 
 @Composable
 fun SelectorSeccion(
